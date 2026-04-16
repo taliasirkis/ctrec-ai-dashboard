@@ -436,11 +436,9 @@
       <input id="setup-base" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" placeholder="appXXXXXXXXXXXXXX" />
       <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Table name</label>
       <input id="setup-table" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" />
-      <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">View (optional)</label>
-      <input id="setup-view" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" />
-      <div style="margin-bottom:14px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+      <div style="margin-bottom:14px;padding:12px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;">
         <h3 style="font-size:13px;font-weight:700;color:#0f172a;margin:0 0 6px;">Airtable column names</h3>
-        <p style="font-size:11px;color:#64748b;margin:0 0 10px;line-height:1.45;">If cards show <strong>Untitled</strong> or <strong>Status TBD</strong>, type each <strong>grid header</strong> from your Airtable table exactly (spelling and spaces). Leave a row blank to use the default name in parentheses.</p>
+        <p style="font-size:11px;color:#64748b;margin:0 0 10px;line-height:1.45;">If cards show <strong>Untitled</strong> or <strong>Status TBD</strong>, type each <strong>grid header</strong> from your Airtable table exactly (spelling and spaces). Leave a row blank to use the default in parentheses.</p>
         <div style="display:grid;gap:8px;">
           <label style="font-size:11px;font-weight:600;color:#475569;">Title / name <span style="font-weight:400;color:#94a3b8">(default: Name)</span><input id="setup-f-name" type="text" class="setup-f-in" style="width:100%;margin-top:2px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;" /></label>
           <label style="font-size:11px;font-weight:600;color:#475569;">Description <span style="font-weight:400;color:#94a3b8">(Description)</span><input id="setup-f-description" type="text" class="setup-f-in" style="width:100%;margin-top:2px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;" /></label>
@@ -451,6 +449,8 @@
           <label style="font-size:11px;font-weight:600;color:#475569;">New flag (checkbox) <span style="font-weight:400;color:#94a3b8">(New)</span><input id="setup-f-isNew" type="text" class="setup-f-in" style="width:100%;margin-top:2px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;" /></label>
         </div>
       </div>
+      <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">View (optional)</label>
+      <input id="setup-view" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" />
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;">
         <button type="button" id="setup-clear" class="reset-btn" style="font-size:12px;">Clear saved connection…</button>
         <div style="display:flex;gap:10px;">
