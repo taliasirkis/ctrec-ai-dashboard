@@ -1,0 +1,14 @@
+# How to use a local token file (optional — for Terminal curl tests only)
+#
+# 1. Copy this file to token.txt in the same folder:
+#      cp token.example.txt token.txt
+# 2. Open token.txt and replace EVERYTHING with your Airtable PAT only:
+#      - One line, no spaces at the ends
+#      - No word "Bearer" — just the secret (starts with pat… or legacy key…)
+# 3. token.txt is gitignored — never commit or share it.
+#
+# Test from this folder:
+#   curl -sS -H "Authorization: Bearer $(tr -d '\n\r' < token.txt)" \
+#     'https://api.airtable.com/v0/appZ1At3HCUjFXSsA/tblIGxyi4yVtzbPB3?maxRecords=1'
+#
+# When curl returns "records" with no error, paste the same PAT in the dashboard Setup.
