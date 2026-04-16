@@ -39,6 +39,20 @@
     Object.assign(window.DASHBOARD_CONFIG || {}, next);
   }
 
+  function clearStoredConnectionAndReload() {
+    if (
+      !confirm(
+        'Remove saved Airtable token and settings from this browser and reload? You will enter them again in Setup.'
+      )
+    )
+      return;
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+    location.reload();
+  }
+  window.__clearDashboardConnection = clearStoredConnectionAndReload;
+
   /** Base / table / view only — never put PAT in the DOM. */
   function fillSetupFormNonSecret() {
     const c = loadMergedConfig();
@@ -305,7 +319,10 @@
     el.innerHTML = `<div style="padding:32px;margin:24px 32px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;color:#991b1b;font-size:14px;">
       <strong>Could not load data</strong><p style="margin-top:8px;line-height:1.5;">${escapeHtml(msg)}</p>
       <p style="margin-top:12px;font-size:13px;color:#7f1d1d;">Check Personal Access Token scopes (data.records:read), base id, and table name. Open setup below if you need to change credentials.</p>
-      <button type="button" class="reset-btn" style="margin-top:14px" onclick="window.__openDashboardSetup()">Open setup</button>
+      <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;">
+        <button type="button" class="reset-btn" onclick="window.__openDashboardSetup()">Open setup</button>
+        <button type="button" class="reset-btn" onclick="window.__clearDashboardConnection()">Clear saved connection &amp; reload</button>
+      </div>
     </div>`;
   }
 
@@ -362,9 +379,12 @@
       <input id="setup-table" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" />
       <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">View (optional)</label>
       <input id="setup-view" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:16px;font-size:13px;" />
-      <div style="display:flex;gap:10px;justify-content:flex-end;">
-        <button type="button" id="setup-cancel" class="reset-btn">Cancel</button>
-        <button type="button" id="setup-save" style="background:#1e293b;color:white;border:0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;">Save &amp; load</button>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;">
+        <button type="button" id="setup-clear" class="reset-btn" style="font-size:12px;">Clear saved connection…</button>
+        <div style="display:flex;gap:10px;">
+          <button type="button" id="setup-cancel" class="reset-btn">Cancel</button>
+          <button type="button" id="setup-save" style="background:#1e293b;color:white;border:0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;">Save &amp; load</button>
+        </div>
       </div>
     </div>`;
     document.body.appendChild(overlay);
@@ -381,6 +401,7 @@
       if (e.target === overlay) close();
     });
     document.getElementById('setup-cancel').addEventListener('click', close);
+    document.getElementById('setup-clear').addEventListener('click', clearStoredConnectionAndReload);
     document.getElementById('setup-save').addEventListener('click', () => {
       const pat = document.getElementById('setup-pat').value.trim();
       const patch = {
