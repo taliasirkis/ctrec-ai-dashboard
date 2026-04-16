@@ -406,8 +406,8 @@
       <h2 style="font-size:18px;margin-bottom:6px;color:#0f172a;">Airtable connection</h2>
       <p style="font-size:12px;color:#64748b;margin-bottom:16px;line-height:1.5;">Values are stored only in this browser (localStorage). For a public GitHub repo, do not commit tokens in <code>config.js</code>.</p>
       <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Personal Access Token</label>
-      <p style="font-size:11px;color:#64748b;margin:-4px 0 6px;line-height:1.4;">Paste a token only when adding or changing it. Leave blank and save to keep your existing token (e.g. when updating base or table only).</p>
-      <input id="setup-pat" type="password" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" placeholder="pat… (optional if already saved)" autocomplete="off" />
+      <p style="font-size:11px;color:#64748b;margin:-4px 0 6px;line-height:1.4;">Shown as plain text so the browser does not block saving long tokens. Paste the full <code>pat…</code> secret. Leave blank and save to keep an existing token when only changing base/table.</p>
+      <input id="setup-pat" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;" placeholder="pat… (paste full token)" />
       <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Base ID</label>
       <input id="setup-base" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" placeholder="appXXXXXXXXXXXXXX" />
       <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Table name</label>
@@ -456,6 +456,13 @@
         patch.airtablePat = pat;
       }
       saveLocalConfig(patch);
+      const verify = loadMergedConfig();
+      if (!verify.airtablePat || verify.airtablePat.length < 12) {
+        window.alert(
+          'No token was saved in this browser. Paste your full Airtable PAT in the token field and click Save again.\n\nNote: token.txt is only for Terminal curl — the website keeps a separate copy here in Setup.'
+        );
+        return;
+      }
       close();
       ensureRefreshTimer();
       refresh();
