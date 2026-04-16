@@ -45,6 +45,7 @@ This repo is the **live** version of the dashboard: **`index.html`** + **`dashbo
    - **Base ID** — from the base URL: `https://airtable.com/<BASE_ID>/...` (starts with `app`).
    - **Table name** — exactly as in Airtable (or the table ID `tbl…`).
    - **View** (optional) — limits which rows load.
+   - **Only load Q4 initiatives** (on by default) — adds an Airtable `filterByFormula` so the `Quarter` column (name editable) must contain `Q4` (e.g. `Q4 FY26`). Uncheck if your table has no such field, or use a view/table that is already Q4-only. You can also paste a **custom** `filterByFormula` to override.
 
 4. **Save & load**. The token is stored **only in that browser** (`localStorage`), not in the repo.
 
@@ -78,6 +79,7 @@ You can copy **`config.example.js`** → **`config.js`** for overrides; **`confi
 | Auth / permission errors | PAT scopes; re-paste token in Setup; base + table names correct. |
 | Untitled / missing status or org | **Auto-detect**; add `schema.bases:read`; or type **exact** Airtable column names in Setup. Linked-record fields need a **Lookup/Formula** that exposes text. |
 | Old UI after deploy | Hard refresh (`Cmd+Shift+R`). `dashboard.js` is versioned with `?v=` in `index.html` — bump when you change JS so browsers fetch the new file. |
+| Airtable error about `filterByFormula` / unknown field | In **Setup**, uncheck “Only load Q4” or set the correct **Quarter / FY column name**, or point at a Q4-only **view** and turn the checkbox off. |
 
 ---
 

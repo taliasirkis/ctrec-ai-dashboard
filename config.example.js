@@ -10,6 +10,11 @@ window.DASHBOARD_CONFIG = {
   baseId: '',
   tableName: 'Initiatives',
   viewName: '',
+  /** When true, only rows where quarterField contains "Q4" are fetched (unless recordFilterFormula is set). */
+  q4Only: true,
+  quarterField: 'Quarter',
+  /** Optional full Airtable formula; if non-empty, overrides q4Only. */
+  recordFilterFormula: '',
   /** How often to refetch (ms). */
   refreshMs: 5 * 60 * 1000,
   /** Map Airtable field names (right) to dashboard keys (left). */

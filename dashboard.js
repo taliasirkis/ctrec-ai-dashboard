@@ -33,6 +33,12 @@
         refreshMs: 5 * 60 * 1000,
         fields: Object.assign({}, DEFAULT_FIELDS),
         orgSlugMap: {},
+        /** When true (and recordFilterFormula empty), API loads only rows whose quarter field contains "Q4". */
+        q4Only: true,
+        /** Airtable column name used for the Q4 filter (single line, single select, etc.). */
+        quarterField: 'Quarter',
+        /** If set, sent as filterByFormula and overrides q4Only. */
+        recordFilterFormula: '',
       },
       window.DASHBOARD_CONFIG || {}
     );
@@ -51,6 +57,9 @@
     merged.baseId = String(merged.baseId || '').trim();
     merged.tableName = String(merged.tableName || '').trim() || 'Initiatives';
     merged.viewName = String(merged.viewName || '').trim();
+    merged.q4Only = merged.q4Only !== false;
+    merged.quarterField = String(merged.quarterField || 'Quarter').trim() || 'Quarter';
+    merged.recordFilterFormula = String(merged.recordFilterFormula || '').trim();
     return merged;
   }
 
@@ -101,6 +110,12 @@
     if (baseEl) baseEl.value = c.baseId || '';
     if (tableEl) tableEl.value = c.tableName || '';
     if (viewEl) viewEl.value = c.viewName || '';
+    const q4El = document.getElementById('setup-q4-only');
+    if (q4El) q4El.checked = c.q4Only !== false;
+    const qfEl = document.getElementById('setup-quarter-field');
+    if (qfEl) qfEl.value = c.quarterField || 'Quarter';
+    const rfEl = document.getElementById('setup-record-filter-formula');
+    if (rfEl) rfEl.value = c.recordFilterFormula || '';
     if (patEl) patEl.value = '';
     const f = c.fields || {};
     const setF = (id, key) => {
@@ -477,11 +492,32 @@
     };
   }
 
+  function airtableFieldRef(fieldName) {
+    const n = String(fieldName || '').trim() || 'Quarter';
+    return '{' + n.replace(/}/g, '}}') + '}';
+  }
+
+  /** Airtable filterByFormula: custom string wins; else optional Q4 substring match on quarterField. */
+  function buildRecordFilterFormula(cfg) {
+    const custom = String(cfg.recordFilterFormula || '').trim();
+    if (custom) return custom;
+    if (cfg.q4Only === false) return '';
+    const ref = airtableFieldRef(cfg.quarterField);
+    return 'FIND("Q4", UPPER(' + ref + '&""))>0';
+  }
+
+  function appendFilterByFormula(url, cfg) {
+    const f = buildRecordFilterFormula(cfg);
+    if (!f) return url;
+    return url + '&filterByFormula=' + encodeURIComponent(f);
+  }
+
   async function fetchAllRecords(cfg) {
     const table = encodeURIComponent(cfg.tableName);
     const base = cfg.baseId.trim();
     let url = `https://api.airtable.com/v0/${base}/${table}?pageSize=100`;
     if (cfg.viewName) url += `&view=${encodeURIComponent(cfg.viewName)}`;
+    url = appendFilterByFormula(url, cfg);
     const token = normalizeToken(cfg.airtablePat);
     if (!token) throw new Error('Missing token after normalize — paste your PAT in Setup and save again.');
     const headers = { Authorization: 'Bearer ' + token };
@@ -511,6 +547,7 @@
     const n = Math.min(Math.max(1, maxRecords || 8), 30);
     let url = `https://api.airtable.com/v0/${base}/${table}?maxRecords=${n}`;
     if (cfg.viewName) url += `&view=${encodeURIComponent(cfg.viewName)}`;
+    url = appendFilterByFormula(url, cfg);
     const token = normalizeToken(cfg.airtablePat);
     if (!token) throw new Error('Missing token');
     const res = await fetch(url, { method: 'GET', mode: 'cors', headers: { Authorization: 'Bearer ' + token } });
@@ -1062,7 +1099,12 @@
       }
       if (typeof window.applyFilters === 'function') window.applyFilters();
     } catch (e) {
-      setError(e.message || String(e));
+      let msg = e.message || String(e);
+      if (/filterByFormula|filter formula|UNKNOWN_FIELD|invalid formula/i.test(msg) && buildRecordFilterFormula(cfg)) {
+        msg +=
+          ' If this is about the Q4 filter: open Setup and uncheck “Only load Q4”, set the correct Quarter column name, or clear the custom formula.';
+      }
+      setError(msg);
     }
   }
 
@@ -1104,6 +1146,20 @@
       <input id="setup-base" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" placeholder="appXXXXXXXXXXXXXX" />
       <label style="display:block;font-size:11px;font-weight:700;color:#24292f;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Table name</label>
       <input id="setup-table" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" />
+      <div style="margin-bottom:14px;padding:14px;background:#ecfeff;border:1px solid #7dd3fc;border-radius:8px;">
+        <h3 style="font-size:13px;font-weight:700;color:#0c4a6e;margin:0 0 10px;letter-spacing:0.02em;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Which rows load</h3>
+        <p style="font-size:11px;color:#0e7490;margin:0 0 10px;line-height:1.45;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Optional <strong>View</strong> and the <strong>Q4</strong> checkbox apply here — scroll this panel if your screen is short.</p>
+        <label style="display:block;font-size:11px;font-weight:700;color:#24292f;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">View (optional)</label>
+        <input id="setup-view" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" />
+        <label style="display:flex;align-items:flex-start;gap:10px;font-size:12px;font-weight:600;color:#1e293b;cursor:pointer;margin-bottom:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+          <input id="setup-q4-only" type="checkbox" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;" checked />
+          <span>Only load <strong>Q4</strong> initiatives (Airtable <code style="font-size:11px;background:#e2e8f0;padding:1px 4px;border-radius:4px;">filterByFormula</code> — quarter field must contain “Q4”, e.g. <em>Q4 FY26</em>)</span>
+        </label>
+        <label style="display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;">Quarter / FY column name in Airtable</label>
+        <input id="setup-quarter-field" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:13px;" placeholder="Quarter" />
+        <label style="display:block;font-size:11px;font-weight:600;color:#475569;margin-bottom:4px;">Custom <code style="font-size:10px;">filterByFormula</code> (optional — overrides checkbox)</label>
+        <input id="setup-record-filter-formula" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;font-size:12px;" placeholder="Leave blank to use Q4 checkbox + field above" />
+      </div>
       <div style="margin-bottom:14px;padding:12px;background:#fff;border:1px solid #d0d7de;border-radius:8px;">
         <h3 style="font-size:12px;font-weight:700;color:#24292f;margin:0 0 6px;letter-spacing:0.03em;"># Airtable column names</h3>
         <p class="setup-note" style="margin:0 0 8px;"># If cards show Untitled / Status TBD: type each grid header from Airtable exactly. Blank row = use default in parentheses.</p>
@@ -1119,8 +1175,6 @@
           <label style="font-size:11px;font-weight:600;color:#475569;">New flag (checkbox) <span style="font-weight:400;color:#94a3b8">(New)</span><input id="setup-f-isNew" type="text" class="setup-f-in" style="width:100%;margin-top:2px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;" /></label>
         </div>
       </div>
-      <label style="display:block;font-size:11px;font-weight:700;color:#24292f;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">View (optional)</label>
-      <input id="setup-view" type="text" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:13px;" />
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;">
         <button type="button" id="setup-clear" class="reset-btn" style="font-size:12px;">Clear saved connection…</button>
         <div style="display:flex;gap:10px;">
@@ -1151,6 +1205,9 @@
       const baseId = document.getElementById('setup-base').value.trim();
       const tableName = document.getElementById('setup-table').value.trim() || 'Initiatives';
       const viewName = document.getElementById('setup-view').value.trim();
+      const q4Only = document.getElementById('setup-q4-only').checked;
+      const quarterField = document.getElementById('setup-quarter-field').value.trim() || 'Quarter';
+      const recordFilterFormula = document.getElementById('setup-record-filter-formula').value.trim();
       if (!pat || !baseId) {
         window.alert('Fill in Personal Access Token and Base ID first (or save a token once, then open Setup again).');
         return;
@@ -1164,6 +1221,9 @@
           baseId: baseId,
           tableName: tableName,
           viewName: viewName,
+          q4Only: q4Only,
+          quarterField: quarterField,
+          recordFilterFormula: recordFilterFormula,
         });
         const schemaHints = (await fetchTableSchemaHints(tmpCfg)) || {};
         tmpCfg._schemaHints = schemaHints;
@@ -1210,6 +1270,9 @@
         baseId: document.getElementById('setup-base').value.trim(),
         tableName: document.getElementById('setup-table').value.trim() || 'Initiatives',
         viewName: document.getElementById('setup-view').value.trim(),
+        q4Only: document.getElementById('setup-q4-only').checked,
+        quarterField: document.getElementById('setup-quarter-field').value.trim() || 'Quarter',
+        recordFilterFormula: document.getElementById('setup-record-filter-formula').value.trim(),
       };
       if (pat) {
         if (pat.length < 30) {
@@ -1254,6 +1317,7 @@
       return el ? String(el.value) : '';
     };
     return {
+      org: g('filterOrg'),
       status: g('filterStatus'),
       priority: g('filterPriority'),
       impact: norm(g('filterImpact')),
@@ -1261,7 +1325,13 @@
     };
   }
 
+  function initiativeOrgSlug(it) {
+    const s = it && it.orgSlug != null ? String(it.orgSlug).trim() : '';
+    return s || 'unknown';
+  }
+
   function itemMatchesFilters(it, st) {
+    if (st.org && initiativeOrgSlug(it) !== st.org) return false;
     if (st.status === 'In progress') {
       if (!rowStatusInProgressBucket(it.status)) return false;
     }
@@ -1284,6 +1354,8 @@
     const fp = document.getElementById('filterPriority');
     const fi = document.getElementById('filterImpact');
     const sb = document.getElementById('searchBox');
+    const fo = document.getElementById('filterOrg');
+    if (fo) fo.value = '';
     if (fs) fs.value = '';
     if (fp) fp.value = '';
     if (fi) fi.value = '';
@@ -1304,6 +1376,11 @@
     const st = getFilterState();
 
     document.querySelectorAll('.org-section').forEach((section) => {
+      const sectionOrg = section.getAttribute('data-org') || '';
+      if (st.org && sectionOrg !== st.org) {
+        section.classList.add('hidden');
+        return;
+      }
       let sectionVisible = 0;
       section.querySelectorAll('.card').forEach((card) => {
         const cardName = card.getAttribute('data-name') || '';
